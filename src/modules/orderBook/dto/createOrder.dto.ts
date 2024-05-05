@@ -1,29 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
-// Define your enum
-enum OrderType {
-  SELL = 'sell',
-  BUY = 'buy',
-}
-
 export class CreateOrderDto {
-  @ApiProperty({ enum: OrderType, enumName: 'OrderType' })
-  @IsNotEmpty()
-  orderType: OrderType;
-
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  orderId: string;
+  ExtraData: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
-  size: number;
+  Side: number;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
-  price: number;
+  Size: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsNumber()
+  LimitPrice: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsNumber()
+  UserID: number;
 }

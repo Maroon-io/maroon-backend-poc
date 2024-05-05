@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/createOrder.dto';
-import { OrderBook } from 'hft-limit-order-book';
 import { Order } from 'hft-limit-order-book/dist/types/order';
+import { HttpService } from '@nestjs/axios';
+import { PrismaService } from 'src/services/prisma.service';
 
 export interface IProcessOrder {
   done: Order[];
@@ -11,34 +12,111 @@ export interface IProcessOrder {
   err: Error | null;
 }
 
+interface ReturnOrderI {
+  extrData: any;
+  size: number;
+  price: number;
+  timestamp: string;
+}
+
 @Injectable()
 export class OrderService {
-  private readonly orderBook: OrderBook = new OrderBook();
+  private readonly config = {
+    headers: {
+      Authorization: `Bearer ${process.env.MODULUS_AUTH_TOKEN}`,
+    },
+  };
 
-  createOrder(createOrderDto: CreateOrderDto): IProcessOrder {
-    return this.orderBook.limit(
-      createOrderDto.orderType as any,
-      createOrderDto.orderId,
-      createOrderDto.size,
-      createOrderDto.price,
-    );
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly prismaService: PrismaService,
+  ) {}
+
+  async createOrder(createOrderDto: CreateOrderDto) {
+    console.log(createOrderDto);
+    try {
+      const orderId = Math.floor(Date.now() / 1000);
+
+      const modulusOrderResponse = await this.httpService.axiosRef.post(
+        '/SubmitOrder',
+        {
+          CurrencyPair: 'FMAT_ETH',
+          Size: createOrderDto.Size,
+          Remaining: createOrderDto.Size,
+          Side: createOrderDto.Side,
+          Type: 2,
+          TimeInForce: 0,
+          LimitPrice: createOrderDto.LimitPrice,
+          StopPrice: 0,
+          TrailingAmount: 0,
+          OrderID: orderId,
+          UserID: createOrderDto.UserID,
+          ExtraData: JSON.parse(createOrderDto.ExtraData),
+        },
+      );
+
+      const data = modulusOrderResponse.data;
+
+      console.log({ modulusOrderResponseData: data });
+      console.log({ modulusOrderResponseData: data?.Event?.NewTrades });
+
+      const orders: ReturnOrderI[] = [];
+      const { Event } = data || {};
+
+      if (Event && Event.NewTrades.length > 0) {
+        const { NewTrades, UpdatedBuyOrders, UpdatedSellOrders } = Event;
+
+        for (const newTrade of NewTrades) {
+          const relevantOrders = [...UpdatedBuyOrders, ...UpdatedSellOrders];
+          const matchingOrder = relevantOrders.find(
+            (order) => order.OrderID === newTrade.MakerOrderID,
+          );
+
+          if (matchingOrder) {
+            orders.push({
+              extrData: matchingOrder.extraData,
+              size: newTrade.Size,
+              price: newTrade.Price,
+              timestamp: newTrade.Timestamp,
+            });
+          }
+        }
+      }
+
+      return orders as any;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  getOrder() {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const orders = this.orderBook.orders;
-    console.log({ orders });
-    const allOrders = Object.values(orders).map((order: any) => ({
-      id: order._id,
-      side: order._side,
-      price: order._price,
-      size: order._size,
-      time: order._time,
-      isMaker: order._isMaker,
-    }));
-    console.log({ allOrders });
+  async getOrder() {
+    try {
+      const modulusOrderResponse = await this.httpService.axiosRef.get(
+        '/api/OrderHistory?side=ALL&pair=ALL',
+        this.config,
+      );
 
-    return allOrders;
+      if (modulusOrderResponse.data.status === 'Error') {
+        return modulusOrderResponse.data;
+      }
+
+      console.log(modulusOrderResponse.data);
+
+      const promise = Promise.all(
+        modulusOrderResponse.data.data.rows.map(async (modulusOrder: any) => {
+          const storedOrder = await this.prismaService.orderBook.findFirst({
+            where: { orderId: modulusOrder.orderId },
+          });
+
+          return { modulusOrder, storedOrder };
+        }),
+      );
+
+      const response = await promise;
+
+      return response;
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
