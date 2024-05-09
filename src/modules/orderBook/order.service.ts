@@ -40,7 +40,8 @@ export class OrderService {
       const modulusOrderResponse = await this.httpService.axiosRef.post(
         '/SubmitOrder',
         {
-          CurrencyPair: 'FMAT_ETH',
+          // CurrencyPair: 'FMAT_ETH',
+          CurrencyPair: createOrderDto.CurrencyPair,
           Size: createOrderDto.Size,
           Remaining: createOrderDto.Size,
           Side: createOrderDto.Side,

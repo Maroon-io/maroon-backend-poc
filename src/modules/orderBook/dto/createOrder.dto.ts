@@ -9,6 +9,11 @@ export class CreateOrderDto {
 
   @ApiProperty()
   @IsNotEmpty()
+  @IsString()
+  CurrencyPair: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   @IsNumber()
   Side: number;
 
