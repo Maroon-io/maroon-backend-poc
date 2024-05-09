@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/createOrder.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -10,11 +10,16 @@ export class OrderController {
 
   @Post('/create-order')
   async createOrder(@Body() createOrderDto: CreateOrderDto) {
-    return this.orderService.createOrder(createOrderDto);
+    return await this.orderService.createOrder(createOrderDto);
   }
 
-  @Get('/order-book')
-  getHello() {
-    return this.orderService.getOrder();
+  @Get('/order-book-history')
+  async getOrderHistory() {
+    return await this.orderService.getOrderHistory();
+  }
+
+  @Get('/user-order-history/:userId')
+  async getUserOrders(@Param('userId') userId: string) {
+    return await this.orderService.getUserOrders(userId);
   }
 }
