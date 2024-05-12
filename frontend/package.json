@@ -1,0 +1,97 @@
+{
+  "name": "maroon",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@0x/contract-wrappers": "^13.23.7",
+    "@0x/protocol-utils": "^11.24.1",
+    "@0x/utils": "^7.0.0",
+    "@0x/web3-wrapper": "^8.0.1",
+    "@ethereumjs/tx": "^4.2.0",
+    "@reduxjs/toolkit": "^2.2.3",
+    "@safe-global/api-kit": "^2.1.0",
+    "@safe-global/protocol-kit": "^3.0.0",
+    "@safe-global/safe-core-sdk-types": "^4.0.0",
+    "@tanstack/react-query": "^5.35.1",
+    "@usecapsule/ethers-v6-integration": "1.3.0",
+    "@usecapsule/wagmi-v2-integration": "^2.4.0",
+    "@usecapsule/web-sdk": "^1.11.0",
+    "@web3auth/base": "^8.0.0",
+    "@web3auth/ethereum-provider": "^8.0.1",
+    "@web3auth/no-modal": "^8.0.1",
+    "@web3auth/openlogin-adapter": "^8.0.1",
+    "@web3auth/wallet-services-plugin": "^8.0.1",
+    "@web3auth/web3auth-wagmi-connector": "^6.0.0",
+    "alchemy-sdk": "^3.3.0",
+    "animate.css": "^4.1.1",
+    "axios": "^1.6.8",
+    "classnames": "^2.5.1",
+    "ethers": "^6.9.0",
+    "framer-motion": "10.9.2",
+    "grommet": "^2.37.0",
+    "grommet-icons": "^4.12.1",
+    "grommet-styles": "^0.2.0",
+    "i18n": "^0.15.1",
+    "lightweight-charts": "^4.1.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-icons": "^5.2.0",
+    "react-loading-skeleton": "^3.4.0",
+    "react-qr-code": "^2.0.12",
+    "react-redux": "^9.1.2",
+    "react-router-dom": "^6.23.0",
+    "react-scripts": "^5.0.1",
+    "react-slick": "^0.28.1",
+    "recharts": "^2.12.6",
+    "redux": "^5.0.1",
+    "redux-persist": "^6.0.0",
+    "slick-carousel": "^1.8.1",
+    "styled-components": "^6.1.9",
+    "util": "^0.12.5",
+    "viem": "2.x",
+    "wagmi": "^2.8.1",
+    "web3": "1.9.0",
+    "zustand": "^4.5.0",
+    "react-app-rewired": "^2.2.1"
+  },
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "lint": "react-scripts lint"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@types/crypto-js": "^4.2.2",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.17",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "buffer": "^6.0.3",
+    "process": "^0.11.10",
+    "serve": "^14.2.0",
+    "tailwindcss": "^3.4.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "4.9.5"
+  }
+}
