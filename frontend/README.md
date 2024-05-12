@@ -57,7 +57,7 @@ This smart contract handles on-chain order settlements, ensuring transparency an
 - Click on the deposit section and fund your wallet with the trade tokens
 - Buy or Sell the tokens
 
-![Video Diagram](https://youtu.be/_3RzRAVbAL4)
+[Video recording](https://youtu.be/_3RzRAVbAL4)
 
 ## Other Component Repositories
 
