@@ -116,7 +116,7 @@ export interface BuildSafeOperation {
 }
 
 export interface ReturnOrderI {
-  extrData: any;
+  extraData: any;
   size: number;
   price: number;
   timestamp: string;

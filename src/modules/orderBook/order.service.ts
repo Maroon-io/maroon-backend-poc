@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/createOrder.dto';
-import { OrderBook } from 'hft-limit-order-book';
 import { Order } from 'hft-limit-order-book/dist/types/order';
+import { HttpService } from '@nestjs/axios';
 import { PrismaService } from 'src/services/prisma.service';
 
 export interface IProcessOrder {
@@ -12,70 +12,131 @@ export interface IProcessOrder {
   err: Error | null;
 }
 
+interface ReturnOrderI {
+  extraData: any;
+  size: number;
+  price: number;
+  timestamp: string;
+}
+
 @Injectable()
 export class OrderService {
-  private readonly orderBook: OrderBook = new OrderBook();
+  private readonly config = {
+    headers: {
+      Authorization: `Bearer ${process.env.MODULUS_AUTH_TOKEN}`,
+    },
+  };
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly prismaService: PrismaService,
+  ) {}
 
   async createOrder(createOrderDto: CreateOrderDto) {
-    await this.prismaService.orderBook.create({
-      data: {
-        orderId: createOrderDto.orderId,
-        metadata: createOrderDto.metadata,
-        side: createOrderDto.orderType,
-        size: createOrderDto.size,
-        price: createOrderDto.price,
-        userId: createOrderDto.userId,
-      },
-    });
+    // console.log(createOrderDto);
+    try {
+      const orderId = Math.floor(Date.now() / 1000);
 
-    return this.orderBook.limit(
-      createOrderDto.orderType as any,
-      createOrderDto.orderId,
-      createOrderDto.size,
-      createOrderDto.price,
-    ) as any;
-  }
+      console.log({
+        CurrencyPair: createOrderDto.CurrencyPair,
+        Size: createOrderDto.Size,
+        Remaining: createOrderDto.Size,
+        Side: createOrderDto.Side,
+        Type: 2,
+        TimeInForce: 0,
+        LimitPrice: createOrderDto.LimitPrice,
+        StopPrice: 0,
+        TrailingAmount: 0,
+        OrderID: orderId,
+        UserID: createOrderDto.UserID,
+        // ExtraData: JSON.parse(createOrderDto.ExtraData),
+      });
 
-  async getOrderHistory() {
-    const allOrders = await this.prismaService.orderBook.findMany();
-    const openOrders = this.getMatchEngineOrder();
+      const modulusOrderResponse = await this.httpService.axiosRef.post(
+        '/SubmitOrder',
+        {
+          // CurrencyPair: 'FMAT_ETH',
+          CurrencyPair: createOrderDto.CurrencyPair,
+          Size: createOrderDto.Size,
+          Remaining: createOrderDto.Size,
+          Side: createOrderDto.Side,
+          Type: 2,
+          TimeInForce: 0,
+          LimitPrice: createOrderDto.LimitPrice,
+          StopPrice: 0,
+          TrailingAmount: 0,
+          OrderID: orderId,
+          UserID: createOrderDto.UserID,
+          ExtraData: JSON.parse(createOrderDto.ExtraData),
+        },
+      );
 
-    const stores = [];
+      const data = modulusOrderResponse.data;
 
-    for (const allOrder of allOrders) {
-      let orderStatus = 'Filled';
-      for (let i = 0; i < openOrders.length; i++) {
-        const openOrder = openOrders[i];
-        if (allOrder.orderId === openOrder.id) {
-          orderStatus = 'Pending';
+      console.log({ modulusOrderResponseData: data });
+      console.log({ modulusOrderResponseData: data?.Event?.NewTrades });
+
+      const orders: ReturnOrderI[] = [];
+      const { Event } = data || {};
+
+      if (Event && Event.NewTrades.length > 0) {
+        const { NewTrades, UpdatedBuyOrders, UpdatedSellOrders } = Event;
+
+        console.log({ NewTrades, UpdatedBuyOrders, UpdatedSellOrders });
+
+        for (const newTrade of NewTrades) {
+          const relevantOrders = [...UpdatedBuyOrders, ...UpdatedSellOrders];
+          const matchingOrder = relevantOrders.find(
+            (order) => order.OrderID === newTrade.MakerOrderID,
+          );
+
+          console.log({ extraData: matchingOrder.extraData })
+
+          if (matchingOrder) {
+            orders.push({
+              extraData: matchingOrder.extraData,
+              size: newTrade.Size,
+              price: newTrade.Price,
+              timestamp: newTrade.Timestamp,
+            });
+          }
         }
       }
-      stores.push({ ...allOrder, orderStatus });
+
+      return orders as any;
+    } catch (error) {
+      console.log(error);
     }
-
-    return stores;
   }
 
-  async getUserOrders(userId: string) {
-    const orderHistories = await this.getOrderHistory();
+  async getOrder() {
+    try {
+      const modulusOrderResponse = await this.httpService.axiosRef.get(
+        '/api/OrderHistory?side=ALL&pair=ALL',
+        this.config,
+      );
 
-    return orderHistories.filter((order) => order.userId === userId);
-  }
+      if (modulusOrderResponse.data.status === 'Error') {
+        return modulusOrderResponse.data;
+      }
 
-  getMatchEngineOrder() {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const orders = this.orderBook.orders;
-    const allOrders = Object.values(orders).map((order: any) => ({
-      id: order._id,
-      side: order._side,
-      price: order._price,
-      size: order._size,
-      time: order._time,
-      isMaker: order._isMaker,
-    }));
-    return allOrders;
+      console.log(modulusOrderResponse.data);
+
+      const promise = Promise.all(
+        modulusOrderResponse.data.data.rows.map(async (modulusOrder: any) => {
+          const storedOrder = await this.prismaService.orderBook.findFirst({
+            where: { orderId: modulusOrder.orderId },
+          });
+
+          return { modulusOrder, storedOrder };
+        }),
+      );
+
+      const response = await promise;
+
+      return response;
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
